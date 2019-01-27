@@ -23,6 +23,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    void DiscoverDevices();
 public slots:
     void handleReadyRead();
     void handleTimeout();
@@ -32,6 +33,10 @@ public:
     QSerialPort *m_serialPort;
     QByteArray  m_readData;
     QTimer      m_timer;
+private slots:
+    void on_PortSelection_currentIndexChanged(int index);
+    void on_Refresh_released();
+    void on_StartStop_released();
 };
 
 #endif // MAINWINDOW_H

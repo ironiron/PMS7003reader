@@ -24,11 +24,11 @@
      </rect>
     </property>
    </widget>
-   <widget class="QComboBox" name="comboBox">
+   <widget class="QComboBox" name="PortSelection">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>40</y>
+      <x>10</x>
+      <y>30</y>
       <width>121</width>
       <height>21</height>
      </rect>
@@ -37,9 +37,9 @@
    <widget class="QComboBox" name="comboBox_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>100</y>
-      <width>111</width>
+      <x>10</x>
+      <y>90</y>
+      <width>71</width>
       <height>22</height>
      </rect>
     </property>
@@ -48,53 +48,131 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>190</y>
+      <y>160</y>
       <width>113</width>
       <height>20</height>
      </rect>
     </property>
    </widget>
-   <widget class="QLCDNumber" name="lcdNumber">
+   <widget class="QLCDNumber" name="PM_1">
     <property name="geometry">
      <rect>
-      <x>290</x>
-      <y>10</y>
+      <x>280</x>
+      <y>30</y>
       <width>64</width>
       <height>23</height>
      </rect>
     </property>
    </widget>
-   <widget class="QLCDNumber" name="lcdNumber_2">
+   <widget class="QLCDNumber" name="PM_2_5">
     <property name="geometry">
      <rect>
-      <x>390</x>
-      <y>10</y>
+      <x>380</x>
+      <y>30</y>
       <width>64</width>
       <height>23</height>
      </rect>
     </property>
    </widget>
-   <widget class="QLCDNumber" name="lcdNumber_3">
+   <widget class="QLCDNumber" name="PM_10">
     <property name="geometry">
      <rect>
       <x>480</x>
-      <y>10</y>
+      <y>30</y>
       <width>64</width>
       <height>23</height>
      </rect>
     </property>
    </widget>
-   <widget class="QLabel" name="COMselection">
+   <widget class="QLabel" name="PortSelectionLabel">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>20</y>
+      <x>10</x>
+      <y>10</y>
       <width>47</width>
       <height>13</height>
      </rect>
     </property>
     <property name="text">
      <string>TextLabel</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="TimeInterval">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>70</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Refresh">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>30</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="PM_1Label">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>10</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="PM_2_5Label">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>10</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="PM_10Label">
+    <property name="geometry">
+     <rect>
+      <x>480</x>
+      <y>10</y>
+      <width>47</width>
+      <height>13</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="StartStop">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>230</y>
+      <width>81</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PushButton</string>
     </property>
    </widget>
   </widget>
