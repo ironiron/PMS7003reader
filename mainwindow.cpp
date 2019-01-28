@@ -20,16 +20,19 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-    //QSerialPortInfo &info2;
     ui->setupUi(this);
-
-    // Example use QSerialPortInfo
-
-DiscoverDevices();
-   // qDebug() << "info2 " << info2.portName();
-
-
-
+    ui->PM_1->setPalette(Qt::blue);
+    ui->PM_2_5->setPalette(Qt::blue);
+    ui->PM_10->setPalette(Qt::blue);
+    DiscoverDevices();
+    int8_t a=0b10011100;
+    int8_t b=0b00011100;
+    qDebug() << ("a=")<<a;
+    qDebug() << ("b=")<<b;
+    qDebug() << ("a1=")<<int(a);
+    qDebug() << ("b1=")<<int(b);
+    qDebug() << ("a1=")<<uint8_t(a);
+    qDebug() << ("b1=")<<uint8_t(b);
 }
 
 
@@ -74,24 +77,78 @@ void MainWindow::DiscoverDevices()
 
 void MainWindow::handleReadyRead()
 {
-    qDebug() << ("d2222:");
-    //return;
-    //m_readData.append(serialPort.readAll());
-    //qDebug() << ("data received:") << m_readData;
-    qDebug() << ("data received2:") << serialPort.readAll();
+    char dat[200];
+    int dataindex=0;
+
+
+    if(serialPort.bytesAvailable()<32)
+        return;
+    qDebug() << ("d2322323345:");
+    qDebug() << ("readdata:") << serialPort.read(dat,50);
+    qDebug() << ("dat:") << int(dat[0]);
+    qDebug() << ("dat1:") << int(dat[1]);
+    qDebug() << ("dat2:") << int(dat[2]);
+    qDebug() << ("dat3:") << int(dat[3]);
+    qDebug() << ("dat4:") << int(dat[4]);
+
+   // while(dataindex<50)
+   // {
+   //     if(dat[dataindex]==0x42)
+  //  }
+      if(dat[0]!=0x42||dat[1]!=0x4d)
+      {
+          qDebug() << ("ERRRRRRORRRRRR");
+
+      }
+
+    PMS7003.PM1=uint8_t(dat[4])<<8|uint8_t(dat[5]);
+    PMS7003.PM2_5=uint8_t(dat[6])<<8|uint8_t(dat[7]);
+    PMS7003.PM10=uint8_t(dat[8])<<8|uint8_t(dat[9]);
+
+    PMS7003.PM1atm=uint8_t(dat[10])<<8|uint8_t(dat[11]);
+    PMS7003.PM2_5atm=uint8_t(dat[12])<<8|uint8_t(dat[13]);
+    PMS7003.PM10atm=uint8_t(dat[14])<<8|uint8_t(dat[15]);
+
+    PMS7003.PCNT_0_3=uint8_t(dat[16])<<8|uint8_t(dat[17]);
+    PMS7003.PCNT_0_5=uint8_t(dat[18])<<8|uint8_t(dat[19]);
+    PMS7003.PCNT_1_0=uint8_t(dat[20])<<8|uint8_t(dat[21]);
+    PMS7003.PCNT_2_5=uint8_t(dat[22])<<8|uint8_t(dat[23]);
+    PMS7003.PCNT_5_0=uint8_t(dat[24])<<8|uint8_t(dat[25]);
+    PMS7003.PCNT_10_0=uint8_t(dat[26])<<8|uint8_t(dat[27]);
+
+    unsigned int crc=PMS7003.PCNT_5_0=uint8_t(dat[30])<<8|uint8_t(dat[31]);
+    unsigned int crc2=0;
+    qDebug() << ("crc") << crc;
+    for (dataindex=0;dataindex<30;dataindex++)
+    {
+        crc2=crc2+uint8_t(dat[dataindex]);
+    }
+    qDebug() << ("crc2") << crc2;
+
+    qDebug() << ("PM1atm:") << int(PMS7003.PM1atm);
+    qDebug() << ("PM23atm:") << int(PMS7003.PM2_5atm);
+    qDebug() << ("PM10atm:") << int(PMS7003.PM10atm);
+    qDebug() << ("PCNT_0_3:") << int(PMS7003.PCNT_0_3);
+    qDebug() << ("PCNT_0_5:") << int(PMS7003.PCNT_0_5);
+    qDebug() << ("PCNT_1_0:") << int(PMS7003.PCNT_1_0);
+    qDebug() << ("PCNT_2_5") << int(PMS7003.PCNT_2_5);
+    qDebug() << ("PCNT_5_0:") << int(PMS7003.PCNT_5_0);
+    qDebug() << ("PCNT_10_0:") << int(PMS7003.PCNT_10_0);
+
+
+    ui->PM_1->display(int(PMS7003.PM1));
+    ui->PM_2_5->display(int(PMS7003.PM2_5));
+    ui->PM_10->display(int(PMS7003.PM10));
+
     if (!m_timer.isActive())
         m_timer.start(5000);
+    qDebug() << ("mtimet:") << m_timer.remainingTime();
 }
 
-void MainWindow::on_PortSelection_currentIndexChanged(int index)
-{
-    qDebug() << ("on_PortSelection_currentIndexChanged");
-}
+
 
 void MainWindow::on_Refresh_released()
 {
-    DiscoverDevices();
-    qDebug() << ("refresh");
     DiscoverDevices();
 }
 

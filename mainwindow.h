@@ -33,8 +33,23 @@ public:
     QSerialPort *m_serialPort;
     QByteArray  m_readData;
     QTimer      m_timer;
+    struct PMS7003
+    {
+        unsigned int PM1;
+        unsigned int PM2_5;
+        unsigned int PM10;
+        unsigned int PM1atm;
+        unsigned int PM2_5atm;
+        unsigned int PM10atm;
+        unsigned int PCNT_0_3;
+        unsigned int PCNT_0_5;
+        unsigned int PCNT_1_0;
+        unsigned int PCNT_2_5;
+        unsigned int PCNT_5_0;
+        unsigned int PCNT_10_0;
+    }PMS7003;
+
 private slots:
-    void on_PortSelection_currentIndexChanged(int index);
     void on_Refresh_released();
     void on_StartStop_released();
 };
