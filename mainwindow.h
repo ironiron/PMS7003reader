@@ -52,6 +52,7 @@ public:
 private slots:
     void on_Refresh_released();
     void on_StartStop_released();
+    void on_pushButton_released();
 };
 
 #endif // MAINWINDOW_H

@@ -14,7 +14,16 @@
 #include <QDebug>
 #include <QThread>
 #include <QTimer>
+#include <QString>
+#include <QDateTime>
+#include <QGraphicsScene>
 QSerialPort serialPort;
+
+
+QVector<double> xx(101), yy(101); // initialize with entries 0..100
+QVector<QCPGraphData> timeData(101);
+
+unsigned int i=0;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -24,6 +33,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->PM_1->setPalette(Qt::blue);
     ui->PM_2_5->setPalette(Qt::blue);
     ui->PM_10->setPalette(Qt::blue);
+    ui->PM_1atm->setPalette(Qt::darkBlue);
+    ui->PM_2_5atm->setPalette(Qt::darkBlue);
+    ui->PM_10atm->setPalette(Qt::darkBlue);
+    ui->PCNT_0_3text->setText(tr("Particles beyond 0,3um:"));
+    ui->PCNT_0_5text->setText(tr("Particles beyond 0,5um:"));
+    ui->PCNT_1_0text->setText(tr("Particles beyond 1um:"));
+    ui->PCNT_2_5text->setText(tr("Particles beyond 2,5um:"));
+    ui->PCNT_5_0text->setText(tr("Particles beyond 5um:"));
+    ui->PCNT_10_0text->setText(tr("Particles beyond 10um:"));
+
     DiscoverDevices();
     int8_t a=0b10011100;
     int8_t b=0b00011100;
@@ -33,6 +52,19 @@ MainWindow::MainWindow(QWidget *parent) :
     qDebug() << ("b1=")<<int(b);
     qDebug() << ("a1=")<<uint8_t(a);
     qDebug() << ("b1=")<<uint8_t(b);
+    ui->PCNT_0_3value->setText("0");
+    ui->PCNT_0_5value->setText("0");
+    ui->PCNT_1_0value->setText("0");
+    ui->PCNT_2_5value->setText("0");
+    ui->PCNT_5_0value->setText("0");
+    ui->PCNT_10_0value->setText("0");
+        ui->customPlot->addGraph();
+
+        QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
+        dateTicker->setDateTimeFormat("hh:mm dd.MM.yyyy");
+       ui->customPlot->xAxis->setTicker(dateTicker);
+       ui->customPlot->xAxis->setTickLabelRotation(90);
+
 }
 
 
@@ -81,6 +113,7 @@ void MainWindow::handleReadyRead()
     int dataindex=0;
 
 
+
     if(serialPort.bytesAvailable()<32)
         return;
     qDebug() << ("d2322323345:");
@@ -116,6 +149,7 @@ void MainWindow::handleReadyRead()
     PMS7003.PCNT_5_0=uint8_t(dat[24])<<8|uint8_t(dat[25]);
     PMS7003.PCNT_10_0=uint8_t(dat[26])<<8|uint8_t(dat[27]);
 
+
     unsigned int crc=PMS7003.PCNT_5_0=uint8_t(dat[30])<<8|uint8_t(dat[31]);
     unsigned int crc2=0;
     qDebug() << ("crc") << crc;
@@ -135,14 +169,47 @@ void MainWindow::handleReadyRead()
     qDebug() << ("PCNT_5_0:") << int(PMS7003.PCNT_5_0);
     qDebug() << ("PCNT_10_0:") << int(PMS7003.PCNT_10_0);
 
+    ui->PCNT_0_3value->setText(QString::number(PMS7003.PCNT_0_3));
+    ui->PCNT_0_5value->setText(QString::number(PMS7003.PCNT_0_5));
+    ui->PCNT_1_0value->setText(QString::number(PMS7003.PCNT_1_0));
+    ui->PCNT_2_5value->setText(QString::number(PMS7003.PCNT_2_5));
+    ui->PCNT_5_0value->setText(QString::number(PMS7003.PCNT_5_0));
+    ui->PCNT_10_0value->setText(QString::number(PMS7003.PCNT_10_0));
+
 
     ui->PM_1->display(int(PMS7003.PM1));
     ui->PM_2_5->display(int(PMS7003.PM2_5));
     ui->PM_10->display(int(PMS7003.PM10));
+    ui->PM_1atm->display(int(PMS7003.PM1atm));
+    ui->PM_2_5atm->display(int(PMS7003.PM2_5atm));
+    ui->PM_10atm->display(int(PMS7003.PM10atm));
+
 
     if (!m_timer.isActive())
         m_timer.start(5000);
     qDebug() << ("mtimet:") << m_timer.remainingTime();
+i++;
+//QDateTime::currentDateTime().toString("hh:mm dd.MM.yyyy");
+    timeData[i].key=QDateTime::currentDateTime().toTime_t();
+    timeData[i].value=PMS7003.PM1;
+   // xx[i] = QDateTime::currentDateTime().toString("hh:mm dd.MM.yyyy");; // x goes from -1 to 1
+   // yy[i] = PMS7003.PM1; // let's plot a quadratic function
+    // create graph and assign data to it:
+
+   ui-> customPlot->graph()->data()->set(timeData);
+    // give the axes some labels:
+   ui-> customPlot->xAxis->setLabel("x");
+   ui-> customPlot->yAxis->setLabel("PM 1");
+    // set axes ranges, so we see all data:
+    ui->customPlot->xAxis->setRange(timeData[1].key, timeData[1].key+24*3600);
+    ui->customPlot->yAxis->setRange(0, 150);
+   ui-> customPlot->replot();
+   if (i>99)
+       i=0;
+
+   QPixmap pixMap = ui->customPlot->grab();
+ qDebug() << ("pixMap=")<<  pixMap.save("baba.png");
+
 }
 
 
@@ -173,4 +240,11 @@ void MainWindow::on_StartStop_released()
             this, &MainWindow::handleError);
    qDebug() << connect(m_timer, &QTimer::timeout, this, &MainWindow::handleTimeout);
         m_timer->start(5000);
+}
+
+void MainWindow::on_pushButton_released()
+{
+    QString directory = QFileDialog::getSaveFileName(this,
+                               tr("Find Files"), QDir::currentPath());
+    ui->savePath->setText(directory);
 }
