@@ -17,7 +17,11 @@
 #include <QString>
 #include <QDateTime>
 #include <QGraphicsScene>
+
+#include "pms7003.h"
 QSerialPort serialPort;
+
+PMS7003 sensor;
 
 
 QVector<double> xx(101), yy(101); // initialize with entries 0..100
@@ -116,13 +120,10 @@ void MainWindow::handleReadyRead()
 
     if(serialPort.bytesAvailable()<32)
         return;
-    qDebug() << ("d2322323345:");
-    qDebug() << ("readdata:") << serialPort.read(dat,50);
-    qDebug() << ("dat:") << int(dat[0]);
-    qDebug() << ("dat1:") << int(dat[1]);
-    qDebug() << ("dat2:") << int(dat[2]);
-    qDebug() << ("dat3:") << int(dat[3]);
-    qDebug() << ("dat4:") << int(dat[4]);
+
+    qDebug() << ("readdata:") << serialPort.read(dat,65);
+
+    sensor.processBytes(dat);
 
    // while(dataindex<50)
    // {
@@ -133,56 +134,30 @@ void MainWindow::handleReadyRead()
           qDebug() << ("ERRRRRRORRRRRR");
 
       }
+#if 1
 
-    PMS7003.PM1=uint8_t(dat[4])<<8|uint8_t(dat[5]);
-    PMS7003.PM2_5=uint8_t(dat[6])<<8|uint8_t(dat[7]);
-    PMS7003.PM10=uint8_t(dat[8])<<8|uint8_t(dat[9]);
-
-    PMS7003.PM1atm=uint8_t(dat[10])<<8|uint8_t(dat[11]);
-    PMS7003.PM2_5atm=uint8_t(dat[12])<<8|uint8_t(dat[13]);
-    PMS7003.PM10atm=uint8_t(dat[14])<<8|uint8_t(dat[15]);
-
-    PMS7003.PCNT_0_3=uint8_t(dat[16])<<8|uint8_t(dat[17]);
-    PMS7003.PCNT_0_5=uint8_t(dat[18])<<8|uint8_t(dat[19]);
-    PMS7003.PCNT_1_0=uint8_t(dat[20])<<8|uint8_t(dat[21]);
-    PMS7003.PCNT_2_5=uint8_t(dat[22])<<8|uint8_t(dat[23]);
-    PMS7003.PCNT_5_0=uint8_t(dat[24])<<8|uint8_t(dat[25]);
-    PMS7003.PCNT_10_0=uint8_t(dat[26])<<8|uint8_t(dat[27]);
-
-
-    unsigned int crc=PMS7003.PCNT_5_0=uint8_t(dat[30])<<8|uint8_t(dat[31]);
+    unsigned int crc=uint8_t(dat[30])<<8|uint8_t(dat[31]);
     unsigned int crc2=0;
     qDebug() << ("crc") << crc;
     for (dataindex=0;dataindex<30;dataindex++)
     {
         crc2=crc2+uint8_t(dat[dataindex]);
     }
-    qDebug() << ("crc2") << crc2;
 
-    qDebug() << ("PM1atm:") << int(PMS7003.PM1atm);
-    qDebug() << ("PM23atm:") << int(PMS7003.PM2_5atm);
-    qDebug() << ("PM10atm:") << int(PMS7003.PM10atm);
-    qDebug() << ("PCNT_0_3:") << int(PMS7003.PCNT_0_3);
-    qDebug() << ("PCNT_0_5:") << int(PMS7003.PCNT_0_5);
-    qDebug() << ("PCNT_1_0:") << int(PMS7003.PCNT_1_0);
-    qDebug() << ("PCNT_2_5") << int(PMS7003.PCNT_2_5);
-    qDebug() << ("PCNT_5_0:") << int(PMS7003.PCNT_5_0);
-    qDebug() << ("PCNT_10_0:") << int(PMS7003.PCNT_10_0);
-
-    ui->PCNT_0_3value->setText(QString::number(PMS7003.PCNT_0_3));
-    ui->PCNT_0_5value->setText(QString::number(PMS7003.PCNT_0_5));
-    ui->PCNT_1_0value->setText(QString::number(PMS7003.PCNT_1_0));
-    ui->PCNT_2_5value->setText(QString::number(PMS7003.PCNT_2_5));
-    ui->PCNT_5_0value->setText(QString::number(PMS7003.PCNT_5_0));
-    ui->PCNT_10_0value->setText(QString::number(PMS7003.PCNT_10_0));
+    ui->PCNT_0_3value->setText(QString::number(sensor.PCNT_0_3));
+    ui->PCNT_0_5value->setText(QString::number(sensor.PCNT_0_5));
+    ui->PCNT_1_0value->setText(QString::number(sensor.PCNT_1_0));
+    ui->PCNT_2_5value->setText(QString::number(sensor.PCNT_2_5));
+    ui->PCNT_5_0value->setText(QString::number(sensor.PCNT_5_0));
+    ui->PCNT_10_0value->setText(QString::number(sensor.PCNT_10_0));
 
 
-    ui->PM_1->display(int(PMS7003.PM1));
-    ui->PM_2_5->display(int(PMS7003.PM2_5));
-    ui->PM_10->display(int(PMS7003.PM10));
-    ui->PM_1atm->display(int(PMS7003.PM1atm));
-    ui->PM_2_5atm->display(int(PMS7003.PM2_5atm));
-    ui->PM_10atm->display(int(PMS7003.PM10atm));
+    ui->PM_1->display(int(sensor.PM1));
+    ui->PM_2_5->display(int(sensor.PM2_5));
+    ui->PM_10->display(int(sensor.PM10));
+    ui->PM_1atm->display(int(sensor.PM1atm));
+    ui->PM_2_5atm->display(int(sensor.PM2_5atm));
+    ui->PM_10atm->display(int(sensor.PM10atm));
 
 
     if (!m_timer.isActive())
@@ -191,7 +166,7 @@ void MainWindow::handleReadyRead()
 i++;
 //QDateTime::currentDateTime().toString("hh:mm dd.MM.yyyy");
     timeData[i].key=QDateTime::currentDateTime().toTime_t();
-    timeData[i].value=PMS7003.PM1;
+    timeData[i].value=sensor.PM1;
    // xx[i] = QDateTime::currentDateTime().toString("hh:mm dd.MM.yyyy");; // x goes from -1 to 1
    // yy[i] = PMS7003.PM1; // let's plot a quadratic function
     // create graph and assign data to it:
@@ -208,8 +183,17 @@ i++;
        i=0;
 
    QPixmap pixMap = ui->customPlot->grab();
- qDebug() << ("pixMap=")<<  pixMap.save("baba.png");
+ qDebug() << ("pixMap=")<<  pixMap.save(ui->savePath->text().append(".png"));
 
+     QFile file(ui->savePath->text().append(".csv"));
+     if (file.open(QIODevice::WriteOnly | QIODevice::Append))
+     {
+           QTextStream stream(&file);
+           stream << QDateTime::currentDateTime().toString("hh:mm dd.MM.yyyy") << "," << timeData[i].value  << endl;
+     }
+        file.close();
+
+#endif
 }
 
 
@@ -240,11 +224,35 @@ void MainWindow::on_StartStop_released()
             this, &MainWindow::handleError);
    qDebug() << connect(m_timer, &QTimer::timeout, this, &MainWindow::handleTimeout);
         m_timer->start(5000);
+
+
+       // filename = QString("%1.csv").arg(QDateTime::currentDateTime().toString("ddMMyyyy-hh_mm_ss"));
+        QFile file(ui->savePath->text());
+        if ( file.open(QIODevice::WriteOnly) )
+        {
+             QTextStream stream( &file );
+             stream << "startParameters"<<"aaaa" << endl<<endl;
+        }
+        file.close();
+        ui->savePath->setEnabled(FALSE);
+        qDebug() <<("browpathhhhhh") << ui->savePath->text();
 }
 
-void MainWindow::on_pushButton_released()
+void MainWindow::on_browseButton_released()
 {
     QString directory = QFileDialog::getSaveFileName(this,
-                               tr("Find Files"), QDir::currentPath());
+                               tr("Find Files"), QDir::currentPath(),
+                               "Images and Text files (*.png *.csv)");
+
+    qDebug() <<"lastIndexOf"<< directory.lastIndexOf(QChar('.'));
+    qDebug() <<"length"<< directory.length();
+        qDebug() <<"directory"<< directory;
+    if(directory.lastIndexOf(QChar('.'))>directory.length()-5)
+    {
+        qDebug() <<"diJESTEM";
+        directory= directory.left(directory.lastIndexOf(QChar('.')));
+    }
     ui->savePath->setText(directory);
+
+
 }
