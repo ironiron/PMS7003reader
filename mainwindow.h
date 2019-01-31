@@ -24,6 +24,8 @@ public:
 private:
     Ui::MainWindow *ui;
     void DiscoverDevices();
+
+    bool working=false;
 public slots:
     void handleReadyRead();
     void handleTimeout();
@@ -39,6 +41,7 @@ private slots:
     void on_Refresh_released();
     void on_StartStop_released();
     void on_browseButton_released();
+    void on_SaveFilesCheckbox_toggled(bool checked);
 };
 
 #endif // MAINWINDOW_H

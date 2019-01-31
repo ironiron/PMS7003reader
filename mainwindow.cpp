@@ -20,13 +20,12 @@
 #include <algorithm>
 
 #include "pms7003.h"
+
 QSerialPort serialPort;
-
 PMS7003 sensor;
-
-
-QVector<double> xx(101), yy(101); // initialize with entries 0..100
-QVector<QCPGraphData> timeData(1);
+QVector<QCPGraphData> timeData0(1);
+QVector<QCPGraphData> timeData1(1);
+QVector<QCPGraphData> timeData2(1);
 QVector<QCPGraphData> timeDataappend(1);
 
 unsigned int i=0;
@@ -48,25 +47,60 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->PCNT_2_5text->setText(tr("Particles beyond 2,5um:"));
     ui->PCNT_5_0text->setText(tr("Particles beyond 5um:"));
     ui->PCNT_10_0text->setText(tr("Particles beyond 10um:"));
-
-    DiscoverDevices();
     ui->PCNT_0_3value->setText("0");
     ui->PCNT_0_5value->setText("0");
     ui->PCNT_1_0value->setText("0");
     ui->PCNT_2_5value->setText("0");
     ui->PCNT_5_0value->setText("0");
     ui->PCNT_10_0value->setText("0");
+    ui->AddDateCheckbox->setText(tr("Add date to file name"));
+    ui->SaveFilesCheckbox->setText(tr("Save files"));
+    ui->SavePictureCheckbox->setText(tr("Save plot"));
 
+    ui->AddDateCheckbox->setChecked(TRUE);
+    ui->SaveFilesCheckbox->setChecked(TRUE);
+    ui->SavePictureCheckbox->setChecked(TRUE);
+    ui->PM_1Label->setText(tr("PM 1"));
+    ui->PM_2_5Label->setText(tr("PM 2.5"));
+    ui->PM_10Label->setText(tr("PM 10"));
+    ui->PM_1atmLabel->setText(tr("PM 1"));
+    ui->PM_2_5atmLabel->setText(tr("PM 2.5"));
+    ui->PM_10atmLabel->setText(tr("PM 10"));
+    ui->browseButton->setText(tr("browse"));
+    ui->Refresh->setText(tr("refresh"));
+    ui->StartStop->setText(tr("Start"));
+    ui->factorylabel->setText(tr("Factory environment"));
+    ui->atmosfericlabel->setText(tr("Standard environment"));
+    ui->TimeIntervalLabel->setText(tr("get data every:"));
+    ui->PortSelectionLabel->setText(tr("select port:"));
+
+    ui->savePath->setText(QDir::currentPath().append("/PMS7003"));
+
+    ui->TimeIntervalcomboBox->insertItem(0,tr("always"));
+    ui->TimeIntervalcomboBox->insertItem(1,tr("every 15min"));
+    ui->TimeIntervalcomboBox->insertItem(2,tr("every 30min"));
+    ui->TimeIntervalcomboBox->insertItem(3,tr("every hour"));
+
+    ui->customPlot->legend->setVisible(true);
+    ui->customPlot->legend->setBrush(QBrush(QColor(255,255,255,230)));
     ui->customPlot->addGraph();
+    ui->customPlot->graph(0)->setPen(QPen(Qt::blue)); // line color blue for first graph
+    ui->customPlot->graph(0)->setName(tr("PM 1"));
+    ui->customPlot->addGraph();
+    ui->customPlot->graph(1)->setPen(QPen(Qt::red)); // line color red for second graph
+    ui->customPlot->graph(1)->setName(tr("PM 2.5"));
+    ui->customPlot->addGraph();
+    ui->customPlot->graph(2)->setPen(QPen(Qt::green)); // line color red for second graph
+    ui->customPlot->graph(2)->setName(tr("PM 10"));
     QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
     dateTicker->setDateTimeFormat("hh:mm dd.MM.yyyy");
     ui->customPlot->xAxis->setTicker(dateTicker);
     ui->customPlot->xAxis->setTickLabelRotation(90);
-    // give the axes some labels:
     ui-> customPlot->xAxis->setLabel(tr("time"));
     ui-> customPlot->yAxis->setLabel(tr("PM"));
-
     ui->customPlot->yAxis->setRange(0, 300);
+
+    DiscoverDevices();
 }
 
 
@@ -122,6 +156,7 @@ void MainWindow::handleReadyRead()
     if(dat[0]!=0x42||dat[1]!=0x4d)
     {
        qDebug() << ("ERRRRRRORRRRRR");
+       return;
     }
 
     sensor.processBytes(dat);
@@ -145,12 +180,21 @@ void MainWindow::handleReadyRead()
     qDebug() << ("mtimet:") << m_timer.remainingTime();
 
 
-    timeData.append(timeDataappend);//append data so never overflows
-    timeData[i].key=QDateTime::currentDateTime().toTime_t();
-    timeData[i].value=sensor.PM1;
-    ui-> customPlot->graph()->data()->set(timeData);
+    timeData0.append(timeDataappend);//append data so never overflows
+    timeData1.append(timeDataappend);
+    timeData2.append(timeDataappend);
+    timeData0[i].key=QDateTime::currentDateTime().toTime_t();
+    timeData1[i].key=QDateTime::currentDateTime().toTime_t();
+    timeData2[i].key=QDateTime::currentDateTime().toTime_t();
+
+    timeData0[i].value=sensor.PM1;
+    ui-> customPlot->graph(0)->data()->set(timeData0);
+    timeData1[i].value=sensor.PM2_5;
+    ui-> customPlot->graph(1)->data()->set(timeData1);
+    timeData2[i].value=sensor.PM10;
+    ui-> customPlot->graph(2)->data()->set(timeData2);
     // set axes ranges, so we see all data:
-    ui->customPlot->xAxis->setRange(timeData[0].key, timeData[0].key+24);
+    ui->customPlot->xAxis->setRange(timeData0[0].key, timeData0[0].key+24);
     ui->customPlot->yAxis->setRange(0, 150);
     ui-> customPlot->replot();
     i++;
@@ -191,27 +235,29 @@ void MainWindow::on_Refresh_released()
 
 void MainWindow::on_StartStop_released()
 {
-    qDebug() << ui->PortSelection->currentText();
-    serialPort.setPortName(ui->PortSelection->currentText());
-    serialPort.setBaudRate(QSerialPort::Baud9600);
-
-    if (!serialPort.open(QIODevice::ReadOnly)) {
-        qDebug() << "errrrr: " << QObject::tr("Failed, error: %2").arg(serialPort.errorString()) << endl;
-    }
-   qDebug() <<"crc"<< serialPort.currentReadChannel();
-   qDebug() <<"io"<< serialPort.isOpen();
-   qDebug() <<"ir"<< serialPort.isReadable();
-   qDebug() <<"iw"<< serialPort.isWritable();
-   qDebug() <<"om"<< serialPort.openMode();
-    qDebug() << ("Jestem");
-    QTimer *m_timer = new QTimer(this);
-    connect(&serialPort, &QSerialPort::readyRead, this, &MainWindow::handleReadyRead);
-    connect(&serialPort, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
+    if(working==false)
+    {
+        working=true;
+        ui->StartStop->setText(tr("stop"));
+        serialPort.setPortName(ui->PortSelection->currentText());
+        serialPort.setBaudRate(QSerialPort::Baud9600);
+        if (!serialPort.open(QIODevice::ReadOnly))
+        {
+           QMessageBox::critical(0, qApp->tr("Error"),
+              qApp->tr("Failed, error: %2").arg(serialPort.errorString()));
+        }
+        connect(&serialPort, &QSerialPort::readyRead, this, &MainWindow::handleReadyRead);
+        connect(&serialPort, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
             this, &MainWindow::handleError);
-   qDebug() << connect(m_timer, &QTimer::timeout, this, &MainWindow::handleTimeout);
+
+        QTimer *m_timer = new QTimer(this);
+        connect(m_timer, &QTimer::timeout, this, &MainWindow::handleTimeout);
         m_timer->start(5000);
 
 
+        ui->AddDateCheckbox->setEnabled(FALSE);
+        ui->SaveFilesCheckbox->setEnabled(FALSE);
+        ui->SavePictureCheckbox->setEnabled(FALSE);
         //abort if no need for saving files
         if (ui->SaveFilesCheckbox->isChecked()==FALSE)
         {
@@ -232,6 +278,24 @@ void MainWindow::on_StartStop_released()
         }
         file.close();
         ui->savePath->setEnabled(FALSE);
+    }
+    else
+    {
+        serialPort.close();
+        working=false;
+        disconnect(&serialPort, &QSerialPort::readyRead, this, &MainWindow::handleReadyRead);
+        disconnect(&serialPort, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
+                    this, &MainWindow::handleError);
+        ui->StartStop->setText(tr("start"));
+        ui->AddDateCheckbox->setEnabled(TRUE);
+        ui->SaveFilesCheckbox->setEnabled(TRUE);
+        ui->SavePictureCheckbox->setEnabled(TRUE);
+
+        timeData0.clear();
+        timeData1.clear();
+        timeData2.clear();
+        i=0;
+    }
 }
 
 void MainWindow::on_browseButton_released()
@@ -245,4 +309,22 @@ void MainWindow::on_browseButton_released()
         directory= directory.left(directory.lastIndexOf(QChar('.')));
     }
     ui->savePath->setText(directory);
+}
+
+void MainWindow::on_SaveFilesCheckbox_toggled(bool checked)
+{
+    if(ui->SaveFilesCheckbox->isChecked())
+    {
+        ui->AddDateCheckbox->setEnabled(TRUE);
+        ui->SavePictureCheckbox->setEnabled(TRUE);
+        ui->savePath->setEnabled(TRUE);
+        ui->browseButton->setEnabled(TRUE);
+    }
+    else
+    {
+        ui->AddDateCheckbox->setEnabled(FALSE);
+        ui->SavePictureCheckbox->setEnabled(FALSE);
+        ui->savePath->setEnabled(FALSE);
+        ui->browseButton->setEnabled(FALSE);
+    }
 }
