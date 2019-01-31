@@ -22,8 +22,7 @@ void PMS7003::processBytes(char *Bytes)
 {
     int index;
 
-    //qDebug() << ("readBytesa:") << serialPort.read(Bytes,65);
-
+#if 0
     qDebug() << ("Bytes:") << int(Bytes[0]);
     qDebug() << ("Bytes1:") << int(Bytes[1]);
     qDebug() << ("Bytes2:") << int(Bytes[2]);
@@ -56,11 +55,8 @@ void PMS7003::processBytes(char *Bytes)
     qDebug() << ("Bytes29:") << int(Bytes[29]);
     qDebug() << ("Bytes30:") << int(Bytes[30]);
     qDebug() << ("Bytes31:") << int(Bytes[31]);
+#endif
 
-   // while(Bytesaindex<50)
-   // {
-   //     if(Bytes[Bytesaindex]==0x42)
-  //  }
       if(Bytes[0]!=0x42||Bytes[1]!=0x4d)
       {
           qDebug() << ("ERRRRRRORRRRRR");

@@ -30,9 +30,9 @@
    <widget class="QComboBox" name="comboBox_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>150</y>
-      <width>121</width>
+      <x>10</x>
+      <y>180</y>
+      <width>151</width>
       <height>22</height>
      </rect>
     </property>
@@ -63,8 +63,8 @@
    <widget class="QLabel" name="TimeIntervalLabel">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>130</y>
+      <x>10</x>
+      <y>160</y>
       <width>47</width>
       <height>13</height>
      </rect>
@@ -89,8 +89,8 @@
    <widget class="QPushButton" name="StartStop">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>180</y>
+      <x>30</x>
+      <y>240</y>
       <width>101</width>
       <height>61</height>
      </rect>
@@ -113,9 +113,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>260</y>
+      <y>330</y>
       <width>171</width>
-      <height>121</height>
+      <height>129</height>
      </rect>
     </property>
     <layout class="QFormLayout" name="formLayout">
@@ -130,13 +130,6 @@
       <widget class="QLabel" name="PCNT_0_3value">
        <property name="text">
         <string>PCNT_0_3value</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="PCNT_0_5text">
-       <property name="text">
-        <string>PCNT_0_5text</string>
        </property>
       </widget>
      </item>
@@ -203,6 +196,13 @@
        </property>
       </widget>
      </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="PCNT_0_5text">
+       <property name="text">
+        <string>PCNT_0_5text</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </widget>
    <widget class="QPushButton" name="browseButton">
@@ -218,10 +218,10 @@
      <string>PushButton</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox">
+   <widget class="QCheckBox" name="SaveFilesCheckbox">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>100</y>
       <width>161</width>
       <height>17</height>
@@ -449,6 +449,32 @@
       </property>
      </widget>
     </widget>
+   </widget>
+   <widget class="QCheckBox" name="SavePictureCheckbox">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>120</y>
+      <width>161</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>CheckBox</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="AddDateCheckbox">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>140</y>
+      <width>161</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>CheckBox</string>
+    </property>
    </widget>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>

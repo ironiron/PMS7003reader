@@ -17,6 +17,7 @@
 #include <QString>
 #include <QDateTime>
 #include <QGraphicsScene>
+#include <algorithm>
 
 #include "pms7003.h"
 QSerialPort serialPort;
@@ -25,7 +26,8 @@ PMS7003 sensor;
 
 
 QVector<double> xx(101), yy(101); // initialize with entries 0..100
-QVector<QCPGraphData> timeData(101);
+QVector<QCPGraphData> timeData(1);
+QVector<QCPGraphData> timeDataappend(1);
 
 unsigned int i=0;
 
@@ -48,27 +50,23 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->PCNT_10_0text->setText(tr("Particles beyond 10um:"));
 
     DiscoverDevices();
-    int8_t a=0b10011100;
-    int8_t b=0b00011100;
-    qDebug() << ("a=")<<a;
-    qDebug() << ("b=")<<b;
-    qDebug() << ("a1=")<<int(a);
-    qDebug() << ("b1=")<<int(b);
-    qDebug() << ("a1=")<<uint8_t(a);
-    qDebug() << ("b1=")<<uint8_t(b);
     ui->PCNT_0_3value->setText("0");
     ui->PCNT_0_5value->setText("0");
     ui->PCNT_1_0value->setText("0");
     ui->PCNT_2_5value->setText("0");
     ui->PCNT_5_0value->setText("0");
     ui->PCNT_10_0value->setText("0");
-        ui->customPlot->addGraph();
 
-        QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
-        dateTicker->setDateTimeFormat("hh:mm dd.MM.yyyy");
-       ui->customPlot->xAxis->setTicker(dateTicker);
-       ui->customPlot->xAxis->setTickLabelRotation(90);
+    ui->customPlot->addGraph();
+    QSharedPointer<QCPAxisTickerDateTime> dateTicker(new QCPAxisTickerDateTime);
+    dateTicker->setDateTimeFormat("hh:mm dd.MM.yyyy");
+    ui->customPlot->xAxis->setTicker(dateTicker);
+    ui->customPlot->xAxis->setTickLabelRotation(90);
+    // give the axes some labels:
+    ui-> customPlot->xAxis->setLabel(tr("time"));
+    ui-> customPlot->yAxis->setLabel(tr("PM"));
 
+    ui->customPlot->yAxis->setRange(0, 300);
 }
 
 
@@ -113,36 +111,20 @@ void MainWindow::DiscoverDevices()
 
 void MainWindow::handleReadyRead()
 {
-    char dat[200];
-    int dataindex=0;
-
-
+    char dat[65];
 
     if(serialPort.bytesAvailable()<32)
+    {
         return;
+    }
+    serialPort.read(dat,65);
 
-    qDebug() << ("readdata:") << serialPort.read(dat,65);
+    if(dat[0]!=0x42||dat[1]!=0x4d)
+    {
+       qDebug() << ("ERRRRRRORRRRRR");
+    }
 
     sensor.processBytes(dat);
-
-   // while(dataindex<50)
-   // {
-   //     if(dat[dataindex]==0x42)
-  //  }
-      if(dat[0]!=0x42||dat[1]!=0x4d)
-      {
-          qDebug() << ("ERRRRRRORRRRRR");
-
-      }
-#if 1
-
-    unsigned int crc=uint8_t(dat[30])<<8|uint8_t(dat[31]);
-    unsigned int crc2=0;
-    qDebug() << ("crc") << crc;
-    for (dataindex=0;dataindex<30;dataindex++)
-    {
-        crc2=crc2+uint8_t(dat[dataindex]);
-    }
 
     ui->PCNT_0_3value->setText(QString::number(sensor.PCNT_0_3));
     ui->PCNT_0_5value->setText(QString::number(sensor.PCNT_0_5));
@@ -150,8 +132,6 @@ void MainWindow::handleReadyRead()
     ui->PCNT_2_5value->setText(QString::number(sensor.PCNT_2_5));
     ui->PCNT_5_0value->setText(QString::number(sensor.PCNT_5_0));
     ui->PCNT_10_0value->setText(QString::number(sensor.PCNT_10_0));
-
-
     ui->PM_1->display(int(sensor.PM1));
     ui->PM_2_5->display(int(sensor.PM2_5));
     ui->PM_10->display(int(sensor.PM10));
@@ -163,37 +143,43 @@ void MainWindow::handleReadyRead()
     if (!m_timer.isActive())
         m_timer.start(5000);
     qDebug() << ("mtimet:") << m_timer.remainingTime();
-i++;
-//QDateTime::currentDateTime().toString("hh:mm dd.MM.yyyy");
+
+
+    timeData.append(timeDataappend);//append data so never overflows
     timeData[i].key=QDateTime::currentDateTime().toTime_t();
     timeData[i].value=sensor.PM1;
-   // xx[i] = QDateTime::currentDateTime().toString("hh:mm dd.MM.yyyy");; // x goes from -1 to 1
-   // yy[i] = PMS7003.PM1; // let's plot a quadratic function
-    // create graph and assign data to it:
-
-   ui-> customPlot->graph()->data()->set(timeData);
-    // give the axes some labels:
-   ui-> customPlot->xAxis->setLabel("x");
-   ui-> customPlot->yAxis->setLabel("PM 1");
+    ui-> customPlot->graph()->data()->set(timeData);
     // set axes ranges, so we see all data:
-    ui->customPlot->xAxis->setRange(timeData[1].key, timeData[1].key+24*3600);
+    ui->customPlot->xAxis->setRange(timeData[0].key, timeData[0].key+24);
     ui->customPlot->yAxis->setRange(0, 150);
-   ui-> customPlot->replot();
-   if (i>99)
-       i=0;
+    ui-> customPlot->replot();
+    i++;
 
-   QPixmap pixMap = ui->customPlot->grab();
- qDebug() << ("pixMap=")<<  pixMap.save(ui->savePath->text().append(".png"));
-
+    //abort if no need for saving files
+    if (ui->SaveFilesCheckbox->isChecked()==FALSE)
+    {
+        return;
+    }
      QFile file(ui->savePath->text().append(".csv"));
      if (file.open(QIODevice::WriteOnly | QIODevice::Append))
      {
            QTextStream stream(&file);
-           stream << QDateTime::currentDateTime().toString("hh:mm dd.MM.yyyy") << "," << timeData[i].value  << endl;
+           stream << QDateTime::currentDateTime().toString("hh:mm dd.MM.yyyy") << "," <<
+                     sensor.PM1<<","  <<
+                     sensor.PM2_5<<","  <<
+                     sensor.PM10<<endl;
      }
-        file.close();
-
-#endif
+     file.close();
+     if (ui->SavePictureCheckbox->isChecked()==FALSE)
+     {
+         return;
+     }
+     QPixmap pixMap = ui->customPlot->grab();
+     if(pixMap.save(ui->savePath->text().append(".png"))!=TRUE)
+     {
+         QMessageBox::critical(0, qApp->tr("Error"),
+             qApp->tr("Could not save plot"));
+     }
 }
 
 
@@ -226,16 +212,26 @@ void MainWindow::on_StartStop_released()
         m_timer->start(5000);
 
 
-       // filename = QString("%1.csv").arg(QDateTime::currentDateTime().toString("ddMMyyyy-hh_mm_ss"));
-        QFile file(ui->savePath->text());
+        //abort if no need for saving files
+        if (ui->SaveFilesCheckbox->isChecked()==FALSE)
+        {
+            return;
+        }
+        if(ui->AddDateCheckbox->isChecked())
+        {
+            ui->savePath->setText(ui->savePath->text().append(QDateTime::currentDateTime().toString("mmhhddMMyy")));
+        }
+        QFile file(ui->savePath->text().append(".csv"));
         if ( file.open(QIODevice::WriteOnly) )
         {
              QTextStream stream( &file );
-             stream << "startParameters"<<"aaaa" << endl<<endl;
+             stream << tr("Date and time")<<","  <<
+                       tr("PM 1") <<","  <<
+                       tr("PM 2.5") <<","  <<
+                       tr("PM 10") << endl;
         }
         file.close();
         ui->savePath->setEnabled(FALSE);
-        qDebug() <<("browpathhhhhh") << ui->savePath->text();
 }
 
 void MainWindow::on_browseButton_released()
@@ -244,15 +240,9 @@ void MainWindow::on_browseButton_released()
                                tr("Find Files"), QDir::currentPath(),
                                "Images and Text files (*.png *.csv)");
 
-    qDebug() <<"lastIndexOf"<< directory.lastIndexOf(QChar('.'));
-    qDebug() <<"length"<< directory.length();
-        qDebug() <<"directory"<< directory;
     if(directory.lastIndexOf(QChar('.'))>directory.length()-5)
     {
-        qDebug() <<"diJESTEM";
         directory= directory.left(directory.lastIndexOf(QChar('.')));
     }
     ui->savePath->setText(directory);
-
-
 }
