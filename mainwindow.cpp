@@ -99,67 +99,35 @@ MainWindow::MainWindow(QWidget *parent) :
     ui-> customPlot->xAxis->setLabel(tr("time"));
     ui-> customPlot->yAxis->setLabel(tr("PM"));
     ui->customPlot->yAxis->setRange(0, 300);
+    ui->customPlot->setInteraction(QCP::iRangeDrag, true);
+    ui->customPlot->setInteraction(QCP::iRangeZoom , true);
 
     DiscoverDevices();
+    connect(&m_timer, &QTimer::timeout, this, &MainWindow::handleTimeout);
 }
 
 
 void MainWindow::handleTimeout()
 {
-    qDebug() << ("d3333333333333332:");
-    return;
-    if (m_readData.isEmpty()) {
-        qDebug()  << QObject::tr("No data was currently available for reading from port %1").arg(m_serialPort->portName()) << endl;
-    } else {
-        qDebug()  << QObject::tr("Data successfully received from port %1").arg(m_serialPort->portName()) << endl;
-        qDebug()  << m_readData << endl;
-    }
-
-  //  QCoreApplication::quit();
-}
-
-void MainWindow::handleError(QSerialPort::SerialPortError serialPortError)
-{
-    qDebug() << ("d444444444444444442:");
-    if (serialPortError == QSerialPort::ReadError) {
-        qDebug() << QObject::tr("An I/O error occurred while reading the data from port %1, error: %2").arg(m_serialPort->portName()).arg(m_serialPort->errorString()) << endl;
-       // QCoreApplication::exit(1);
-    }
-}
-
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
-
-void MainWindow::DiscoverDevices()
-{
-    ui->PortSelection->clear();
-    int i=0;
-    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
+    qDebug() << ("d3333333333334443332:");
+    if(ui->TimeIntervalcomboBox->currentIndex()!=0)
     {
-        ui->PortSelection->insertItem(i,info.portName());
-        i++;
+        if(DataStable)
+        {
+            DataStable=false;
+            qDebug() << ("d3332111111111334443332:");
+            sensor.setSleepMode();
+            setTimers();
+        }
+        else
+        {
+            DataStable=true;
+            qDebug() << ("adsdasdasdadadaddadadahhhhh:");
+            sensor.wakeUp();
+            wait_timer.start(30000);//1 min
+            return;
+        }
     }
-}
-
-void MainWindow::handleReadyRead()
-{
-    char dat[65];
-
-    if(serialPort.bytesAvailable()<32)
-    {
-        return;
-    }
-    serialPort.read(dat,65);
-
-    if(dat[0]!=0x42||dat[1]!=0x4d)
-    {
-       qDebug() << ("ERRRRRRORRRRRR");
-       return;
-    }
-
-    sensor.processBytes(dat);
 
     ui->PCNT_0_3value->setText(QString::number(sensor.PCNT_0_3));
     ui->PCNT_0_5value->setText(QString::number(sensor.PCNT_0_5));
@@ -174,18 +142,14 @@ void MainWindow::handleReadyRead()
     ui->PM_2_5atm->display(int(sensor.PM2_5atm));
     ui->PM_10atm->display(int(sensor.PM10atm));
 
-
-    if (!m_timer.isActive())
-        m_timer.start(5000);
     qDebug() << ("mtimet:") << m_timer.remainingTime();
 
-
-    timeData0.append(timeDataappend);//append data so never overflows
-    timeData1.append(timeDataappend);
-    timeData2.append(timeDataappend);
     timeData0[i].key=QDateTime::currentDateTime().toTime_t();
     timeData1[i].key=QDateTime::currentDateTime().toTime_t();
     timeData2[i].key=QDateTime::currentDateTime().toTime_t();
+    timeData0.append(timeDataappend);//append data so never overflows
+    timeData1.append(timeDataappend);
+    timeData2.append(timeDataappend);
 
     timeData0[i].value=sensor.PM1;
     ui-> customPlot->graph(0)->data()->set(timeData0);
@@ -226,7 +190,48 @@ void MainWindow::handleReadyRead()
      }
 }
 
+MainWindow::~MainWindow()
+{
+    delete ui;
+}
 
+void MainWindow::DiscoverDevices()
+{
+    ui->PortSelection->clear();
+    int i=0;
+    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
+    {
+        ui->PortSelection->insertItem(i,info.portName());
+        i++;
+    }
+}
+
+void MainWindow::setTimers()
+{
+    switch(ui->TimeIntervalcomboBox->currentIndex())
+    {
+    case 0:
+        m_timer.start(1000);
+        //DataStable=true;
+        break;
+    case 1:
+        sensor.setSleepMode();
+       // DataStable=false;
+        qDebug() << ("d3asfasgasgagaas:");
+        m_timer.start(1000*1*60);//15 min period but 1 min is for data stability
+        break;
+    case 2:
+        sensor.setSleepMode();
+        //DataStable=false;
+        m_timer.start(1000*29*60);
+        break;
+    case 3:
+        sensor.setSleepMode();
+        //DataStable=false;
+        m_timer.start(1000*59*60);
+        break;
+    }
+}
 
 void MainWindow::on_Refresh_released()
 {
@@ -235,29 +240,21 @@ void MainWindow::on_Refresh_released()
 
 void MainWindow::on_StartStop_released()
 {
-    if(working==false)
+    if(running==false)
     {
-        working=true;
+        running=true;
         ui->StartStop->setText(tr("stop"));
-        serialPort.setPortName(ui->PortSelection->currentText());
-        serialPort.setBaudRate(QSerialPort::Baud9600);
-        if (!serialPort.open(QIODevice::ReadOnly))
-        {
-           QMessageBox::critical(0, qApp->tr("Error"),
-              qApp->tr("Failed, error: %2").arg(serialPort.errorString()));
-        }
-        connect(&serialPort, &QSerialPort::readyRead, this, &MainWindow::handleReadyRead);
-        connect(&serialPort, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
-            this, &MainWindow::handleError);
-
-        QTimer *m_timer = new QTimer(this);
-        connect(m_timer, &QTimer::timeout, this, &MainWindow::handleTimeout);
-        m_timer->start(5000);
-
-
+        sensor.setPort(ui->PortSelection->currentText());
+        sensor.wakeUp();
+        m_timer.start(5000);
+        DataStable=true;
+        //setTimers();
         ui->AddDateCheckbox->setEnabled(FALSE);
         ui->SaveFilesCheckbox->setEnabled(FALSE);
         ui->SavePictureCheckbox->setEnabled(FALSE);
+        ui->savePath->setEnabled(FALSE);
+        ui->TimeIntervalcomboBox->setEnabled(FALSE);
+        ui->browseButton->setEnabled(FALSE);
         //abort if no need for saving files
         if (ui->SaveFilesCheckbox->isChecked()==FALSE)
         {
@@ -277,19 +274,24 @@ void MainWindow::on_StartStop_released()
                        tr("PM 10") << endl;
         }
         file.close();
-        ui->savePath->setEnabled(FALSE);
     }
     else
     {
-        serialPort.close();
-        working=false;
-        disconnect(&serialPort, &QSerialPort::readyRead, this, &MainWindow::handleReadyRead);
-        disconnect(&serialPort, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
-                    this, &MainWindow::handleError);
+        //serialPort.close();
+        running=false;
+        m_timer.stop();
+
+        sensor.reset();
+        //disconnect(&serialPort, &QSerialPort::readyRead, this, &MainWindow::handleReadyRead);
+        //disconnect(&serialPort, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
+         //           this, &MainWindow::handleError);
         ui->StartStop->setText(tr("start"));
         ui->AddDateCheckbox->setEnabled(TRUE);
         ui->SaveFilesCheckbox->setEnabled(TRUE);
+        ui->savePath->setEnabled(TRUE);
         ui->SavePictureCheckbox->setEnabled(TRUE);
+        ui->TimeIntervalcomboBox->setEnabled(TRUE);
+        ui->browseButton->setEnabled(TRUE);
 
         timeData0.clear();
         timeData1.clear();

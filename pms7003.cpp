@@ -4,7 +4,46 @@
 
 PMS7003::PMS7003(QObject *parent) : QObject(parent)
 {
+}
 
+void PMS7003::setPort(QString serialport)
+{
+    port.setPortName(serialport);
+    port.setBaudRate(QSerialPort::Baud9600);
+    if (!port.open(QIODevice::ReadWrite))
+    {
+       QMessageBox::critical(0, qApp->tr("Error"),
+          qApp->tr("Failed, error: %2").arg(port.errorString()));
+    }
+    connect(&port, &QSerialPort::readyRead, this, &PMS7003::handleread);
+    connect(&port, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
+            this, &PMS7003::handleError);
+}
+
+void PMS7003::reset()
+{
+    port.close();
+    disconnect(&port, &QSerialPort::readyRead, this, &PMS7003::handleread);
+    disconnect(&port, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
+            this, &PMS7003::handleError);
+}
+
+void PMS7003::setSleepMode()
+{
+    char data[]={0x42,0x4d,0xe4,0,0,0,0};
+    uint16_t crc=0x42+0x4d+0xe4;
+    data[6]=crc & 0xff;
+    data[5]=(crc >> 8);
+    port.write(data,7);
+}
+
+void PMS7003::wakeUp()
+{
+    char data[]={0x42,0x4d,0xe4,0,1,0,0};
+    uint16_t crc=0x42+0x4d+0xe4+1;
+    data[6]=crc & 0xff;
+    data[5]=(crc >> 8);
+    port.write(data,7);
 }
 
 void PMS7003::getData()
@@ -21,7 +60,6 @@ void PMS7003::getData(char *Bytes)
 void PMS7003::processBytes(char *Bytes)
 {
     int index;
-
 #if 0
     qDebug() << ("Bytes:") << int(Bytes[0]);
     qDebug() << ("Bytes1:") << int(Bytes[1]);
@@ -57,13 +95,6 @@ void PMS7003::processBytes(char *Bytes)
     qDebug() << ("Bytes31:") << int(Bytes[31]);
 #endif
 
-      if(Bytes[0]!=0x42||Bytes[1]!=0x4d)
-      {
-          qDebug() << ("ERRRRRRORRRRRR");
-
-      }
-
-
       unsigned int crc=PCNT_5_0=uint8_t(Bytes[30])<<8|uint8_t(Bytes[31]);
       unsigned int crc2=0;
       qDebug() << ("crc") << crc;
@@ -86,6 +117,41 @@ void PMS7003::processBytes(char *Bytes)
       PCNT_2_5=uint8_t(Bytes[22])<<8|uint8_t(Bytes[23]);
       PCNT_5_0=uint8_t(Bytes[24])<<8|uint8_t(Bytes[25]);
       PCNT_10_0=uint8_t(Bytes[26])<<8|uint8_t(Bytes[27]);
+}
+
+void PMS7003::handleread()
+{
+    char dat[65];
+
+    if(port.bytesAvailable()<32)
+    {
+        return;
+    }
+    port.peek(dat,32);
+
+
+    if(dat[0]!=0x42||dat[1]!=0x4d)
+    {
+       qDebug() << ("ERRRRRRORRRRRR");
+       int index=0;
+       for (;index<32;index++)
+       {
+           if (dat[index]==0x42)
+           {
+               break;
+           }
+       }
+       port.read(dat,index);
+       return;
+    }
+    port.read(dat,32);
+    processBytes(dat);
+}
+
+void PMS7003::handleError()
+{
+    QMessageBox::critical(0, qApp->tr("Error"),
+       qApp->tr("An I/O error occurred while reading the data, error: %2").arg(port.errorString()));
 }
 
 

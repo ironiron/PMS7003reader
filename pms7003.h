@@ -3,6 +3,23 @@
 
 #include <QObject>
 #include <QSerialPort>
+#include <QMessageBox>
+#include <QTextStream>
+#include <QCoreApplication>
+#include <QFile>
+#include <QStringList>
+#include <QDebug>
+
+#include <QSerialPort>
+#include <QSerialPortInfo>
+#include <QCoreApplication>
+#include <QDebug>
+#include <QThread>
+#include <QTimer>
+#include <QString>
+#include <QDateTime>
+#include <QGraphicsScene>
+#include <algorithm>
 
 class PMS7003 : public QObject
 {
@@ -22,6 +39,11 @@ public:
         unsigned int PCNT_5_0;
         unsigned int PCNT_10_0;
     explicit PMS7003(QObject *parent = 0);
+    void setPort(QString serialport);
+    void reset(void);
+    void setSleepMode(void);
+    void wakeUp(void);
+
 
     void getData();
     void getData(char *Bytes);
@@ -29,9 +51,11 @@ public:
 
 signals:
 
-public slots:
-
-
+private slots:
+    void handleread(void);
+    void handleError(void);
+private:
+    QSerialPort port;
 
 };
 

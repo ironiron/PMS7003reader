@@ -24,17 +24,17 @@ public:
 private:
     Ui::MainWindow *ui;
     void DiscoverDevices();
+    void setTimers(void);
 
-    bool working=false;
+    bool running=false;
+    bool DataStable=false;
 public slots:
-    void handleReadyRead();
     void handleTimeout();
-    void handleError(QSerialPort::SerialPortError error);
-
 public:
     QSerialPort *m_serialPort;
     QByteArray  m_readData;
     QTimer      m_timer;
+    QTimer      wait_timer;
 
 
 private slots:
