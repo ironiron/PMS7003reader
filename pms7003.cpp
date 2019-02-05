@@ -102,7 +102,10 @@ void PMS7003::processBytes(char *Bytes)
       {
           crc2=crc2+uint8_t(Bytes[index]);
       }
-
+        if(crc2!=crc)
+        {
+            qDebug() << ("NOT EQUAL") ;
+        }
       this->PM1=uint8_t(Bytes[4])<<8|uint8_t(Bytes[5]);
       PM2_5=uint8_t(Bytes[6])<<8|uint8_t(Bytes[7]);
       PM10=uint8_t(Bytes[8])<<8|uint8_t(Bytes[9]);

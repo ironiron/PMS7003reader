@@ -29,6 +29,8 @@ QVector<QCPGraphData> timeData2(1);
 QVector<QCPGraphData> timeDataappend(1);
 
 unsigned int i=0;
+//TODO add average
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -99,11 +101,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui-> customPlot->xAxis->setLabel(tr("time"));
     ui-> customPlot->yAxis->setLabel(tr("PM"));
     ui->customPlot->yAxis->setRange(0, 300);
+    ui->customPlot->xAxis->setRange(QDateTime::currentDateTime().toTime_t(), QDateTime::currentDateTime().toTime_t()+24*3600);
     ui->customPlot->setInteraction(QCP::iRangeDrag, true);
     ui->customPlot->setInteraction(QCP::iRangeZoom , true);
 
     DiscoverDevices();
     connect(&m_timer, &QTimer::timeout, this, &MainWindow::handleTimeout);
+
+    timeData0.clear();
+    timeData1.clear();
+    timeData2.clear();
 }
 
 
@@ -116,17 +123,26 @@ void MainWindow::handleTimeout()
         {
             DataStable=false;
             qDebug() << ("d3332111111111334443332:");
+            qDebug() << ("mtimet:") << m_timer.remainingTime();
             sensor.setSleepMode();
+            qDebug() << ("mtimet:") << m_timer.remainingTime();
             setTimers();
         }
         else
         {
             DataStable=true;
             qDebug() << ("adsdasdasdadadaddadadahhhhh:");
+            qDebug() << ("mtimet:") << m_timer.remainingTime();
             sensor.wakeUp();
-            wait_timer.start(30000);//1 min
+            m_timer.start(60000);//1 min
+            qDebug() << ("mtimet:") << m_timer.remainingTime();
+            qDebug() << ("wait_timer:") << wait_timer.remainingTime();
             return;
         }
+    }
+    else
+    {
+        m_timer.start(1000);
     }
 
     ui->PCNT_0_3value->setText(QString::number(sensor.PCNT_0_3));
@@ -144,12 +160,12 @@ void MainWindow::handleTimeout()
 
     qDebug() << ("mtimet:") << m_timer.remainingTime();
 
-    timeData0[i].key=QDateTime::currentDateTime().toTime_t();
-    timeData1[i].key=QDateTime::currentDateTime().toTime_t();
-    timeData2[i].key=QDateTime::currentDateTime().toTime_t();
     timeData0.append(timeDataappend);//append data so never overflows
     timeData1.append(timeDataappend);
     timeData2.append(timeDataappend);
+    timeData0[i].key=QDateTime::currentDateTime().toTime_t();
+    timeData1[i].key=QDateTime::currentDateTime().toTime_t();
+    timeData2[i].key=QDateTime::currentDateTime().toTime_t();
 
     timeData0[i].value=sensor.PM1;
     ui-> customPlot->graph(0)->data()->set(timeData0);
@@ -158,8 +174,6 @@ void MainWindow::handleTimeout()
     timeData2[i].value=sensor.PM10;
     ui-> customPlot->graph(2)->data()->set(timeData2);
     // set axes ranges, so we see all data:
-    ui->customPlot->xAxis->setRange(timeData0[0].key, timeData0[0].key+24);
-    ui->customPlot->yAxis->setRange(0, 150);
     ui-> customPlot->replot();
     i++;
 
@@ -210,24 +224,13 @@ void MainWindow::setTimers()
 {
     switch(ui->TimeIntervalcomboBox->currentIndex())
     {
-    case 0:
-        m_timer.start(1000);
-        //DataStable=true;
-        break;
     case 1:
-        sensor.setSleepMode();
-       // DataStable=false;
-        qDebug() << ("d3asfasgasgagaas:");
-        m_timer.start(1000*1*60);//15 min period but 1 min is for data stability
+        m_timer.start(1000*14*60);//15 min period but 1 min is added to wait for data stability
         break;
     case 2:
-        sensor.setSleepMode();
-        //DataStable=false;
         m_timer.start(1000*29*60);
         break;
     case 3:
-        sensor.setSleepMode();
-        //DataStable=false;
         m_timer.start(1000*59*60);
         break;
     }
@@ -248,7 +251,6 @@ void MainWindow::on_StartStop_released()
         sensor.wakeUp();
         m_timer.start(5000);
         DataStable=true;
-        //setTimers();
         ui->AddDateCheckbox->setEnabled(FALSE);
         ui->SaveFilesCheckbox->setEnabled(FALSE);
         ui->SavePictureCheckbox->setEnabled(FALSE);
@@ -277,14 +279,9 @@ void MainWindow::on_StartStop_released()
     }
     else
     {
-        //serialPort.close();
         running=false;
         m_timer.stop();
-
         sensor.reset();
-        //disconnect(&serialPort, &QSerialPort::readyRead, this, &MainWindow::handleReadyRead);
-        //disconnect(&serialPort, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
-         //           this, &MainWindow::handleError);
         ui->StartStop->setText(tr("start"));
         ui->AddDateCheckbox->setEnabled(TRUE);
         ui->SaveFilesCheckbox->setEnabled(TRUE);
