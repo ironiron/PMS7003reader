@@ -1,13 +1,11 @@
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QSerialPort>
+#include "pms7003.h"
 
 #include <QTextStream>
-#include <QCoreApplication>
 #include <QFile>
 #include <QStringList>
-#include <QDebug>
-
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QCoreApplication>
@@ -18,8 +16,8 @@
 #include <QDateTime>
 #include <QGraphicsScene>
 #include <algorithm>
-
-#include "pms7003.h"
+#include <QByteArray>
+#include <QObject>
 
 QSerialPort serialPort;
 PMS7003 sensor;
@@ -116,27 +114,19 @@ MainWindow::MainWindow(QWidget *parent) :
 
 void MainWindow::handleTimeout()
 {
-    qDebug() << ("d3333333333334443332:");
     if(ui->TimeIntervalcomboBox->currentIndex()!=0)
     {
         if(DataStable)
         {
             DataStable=false;
-            qDebug() << ("d3332111111111334443332:");
-            qDebug() << ("mtimet:") << m_timer.remainingTime();
             sensor.setSleepMode();
-            qDebug() << ("mtimet:") << m_timer.remainingTime();
             setTimers();
         }
         else
         {
             DataStable=true;
-            qDebug() << ("adsdasdasdadadaddadadahhhhh:");
-            qDebug() << ("mtimet:") << m_timer.remainingTime();
             sensor.wakeUp();
             m_timer.start(60000);//1 min
-            qDebug() << ("mtimet:") << m_timer.remainingTime();
-            qDebug() << ("wait_timer:") << wait_timer.remainingTime();
             return;
         }
     }

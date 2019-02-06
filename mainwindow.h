@@ -3,11 +3,20 @@
 
 #include <QMainWindow>
 #include <QTextStream>
+#include <QFile>
+#include <QStringList>
+#include <QSerialPort>
+#include <QSerialPortInfo>
+#include <QCoreApplication>
+#include <QDebug>
+#include <QThread>
 #include <QTimer>
+#include <QString>
+#include <QDateTime>
+#include <QGraphicsScene>
+#include <algorithm>
 #include <QByteArray>
 #include <QObject>
-#include <QSerialPort>
-#include <QMainWindow>
 
 namespace Ui {
 class MainWindow;
