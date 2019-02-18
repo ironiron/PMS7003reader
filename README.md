@@ -11,16 +11,16 @@ Features
 * ability to add data when saving to file
 * currently works only on x64 system
 
-How to use
-	You need except sensor You need UART to USB converter with connected cables.
+### How to use
+You need, except sensor, an UART to USB converter with connection cables.
 After installing this app You need to select serial port, and press start. Wait 5secs for first data. When You run app
-plot x axis is automatically set to 24 hours range. you can zoom and move whole chart, or just 
+plot x axis is automatically set to 24 hours range. You can zoom and move whole chart, or just 
 particular axis.
 
-Known limitations:
-*with data stamp it always adds new data every time Start button is pressed
-*if path to save file does not exist it won't inform about problem, until first measurement
-*needs at least 2 measurements to display data on plot
+### Known limitations:
+* with data stamp it always adds new data every time Start button is pressed
+* if path to save file does not exist it won't inform about problem, until first measurement
+* needs at least 2 measurements to display data on plot
 
-Author: Rafa≥ Mazurkiewicz
+Author: Rafa≈Å Mazurkiewicz
 contact: raf.mazurkiewicz@op.pl
